@@ -1,122 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bike Pooling</title>
-  <link rel="stylesheet" href="frontpage.css">
-</head>
-<body>
-  <div class="container">
-    <h1>Bike Pooling</h1>
-    <form id="searchRidesForm">
-      <label for="pickup">Pickup Location:</label>
-      <select name="pickup" id="pickup">
-        <option value="">Select Pickup Location</option>
-        <!-- Options will be dynamically populated from the backend API -->
-      </select>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bike Pooling</title>
+    <link rel="stylesheet" href="frontpage.css" />
+    <link rel="stylesheet" href="listdriver.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Bike Pooling</h1>
+      <form id="searchRidesForm">
+        <label for="pickup">Pickup Location:</label>
+        <select name="pickup" id="pickup">
+          <option value="">Select Pickup Location</option>
+          <!-- Options will be dynamically populated from the backend API -->
+        </select>
 
-      <label for="dropoff">Dropoff Location:</label>
-      <select name="dropoff" id="dropoff">
-        <option value="">Select Dropoff Location</option>
-        <!-- Options will be dynamically populated from the backend API -->
-      </select>
+        <label for="dropoff">Dropoff Location:</label>
+        <select name="dropoff" id="dropoff">
+          <option value="">Select Dropoff Location</option>
+          <!-- Options will be dynamically populated from the backend API -->
+        </select>
 
-      <button type="button" onclick="searchRides()">
-        Search Available Drivers
-      </button>
-    </form>
+        <button type="button" onclick="searchRides()">
+          Search Available Drivers
+        </button>
+      </form>
 
-    <div id="ridesContainer"></div>
-  </div>
+      <div id="ridesContainer"></div>
 
-  <script>
-    // Fetch places from the backend API and populate the dropdowns
-    async function fetchPlaces() {
-      try {
-        const response = await fetch("http://localhost:8080/places/getAllPlaces");
-        const data = await response.json();
+      <div id="driverDetails" style="display: none">
+        <h2>Driver Details</h2>
+        <p><strong>Pickup:</strong> <span id="pickupDetails"></span></p>
+        <p><strong>Dropoff:</strong> <span id="dropoffDetails"></span></p>
+        <p><strong>Price:</strong> $<span id="priceDetails"></span></p>
+        <button id="bookRideButton" onclick="bookRide()">Book Ride</button>
+      </div>
+    </div>
 
-        if (response.ok) {
-          // Populate the Pickup Location dropdown
-          const pickupDropdown = document.getElementById("pickup");
-          data.places.forEach((place) => {
-            const option = document.createElement("option");
-            option.value = place.name;
-            option.textContent = place.name;
-            pickupDropdown.appendChild(option);
-          });
+    <script>
+      let selectedRide;
 
-          // Populate the Dropoff Location dropdown
-          const dropoffDropdown = document.getElementById("dropoff");
-          data.places.forEach((place) => {
-            const option = document.createElement("option");
-            option.value = place.name;
-            option.textContent = place.name;
-            dropoffDropdown.appendChild(option);
+      // Fetch places from the backend API and populate the dropdowns
+      async function fetchPlaces() {
+        try {
+          const response = await fetch(
+            "http://localhost:8080/places/getAllPlaces"
+          );
+          const data = await response.json();
+
+          if (response.ok) {
+            // Populate the Pickup Location dropdown
+            const pickupDropdown = document.getElementById("pickup");
+            data.places.forEach((place) => {
+              const option = document.createElement("option");
+              option.value = place.name;
+              option.textContent = place.name;
+              pickupDropdown.appendChild(option);
+            });
+
+            // Populate the Dropoff Location dropdown
+            const dropoffDropdown = document.getElementById("dropoff");
+            data.places.forEach((place) => {
+              const option = document.createElement("option");
+              option.value = place.name;
+              option.textContent = place.name;
+              dropoffDropdown.appendChild(option);
+            });
+          } else {
+            console.error("Error fetching places:", data.message);
+          }
+        } catch (error) {
+          console.error("Error fetching places:", error.message);
+        }
+      }
+
+      // Function to handle form submission and fetch available rides
+      async function searchRides() {
+        try {
+          const pickupLocation = document.getElementById("pickup").value;
+          const dropoffLocation = document.getElementById("dropoff").value;
+
+          const response = await fetch(
+            `http://localhost:8080/searchRides?source=${pickupLocation}&destination=${dropoffLocation}`
+          );
+          const data = await response.json();
+
+          if (response.ok) {
+            // Display rides
+            displayRides(data.rides);
+          } else {
+            // Handle the case where no rides data is available
+            console.error("No rides data available.");
+          }
+        } catch (error) {
+          console.error("Error searching rides:", error.message);
+        }
+      }
+
+      // Function to display rides on the page
+      function displayRides(ridesData) {
+        const ridesContainer = document.getElementById("ridesContainer");
+
+        if (ridesData && ridesData.length > 0) {
+          // Display ride information
+          ridesContainer.innerHTML = ""; // Clear previous rides
+
+          ridesData.forEach((ride, index) => {
+            const rideCard = document.createElement("div");
+            rideCard.className = "rideCard";
+
+            const rideDetailsButton = document.createElement("button");
+            rideDetailsButton.textContent = `Select ${ride.source} to ${ride.destination}`;
+            rideDetailsButton.onclick = function () {
+              selectedRide = ride;
+              showRideDetails(selectedRide);
+            };
+
+            rideCard.appendChild(rideDetailsButton);
+            ridesContainer.appendChild(rideCard);
           });
         } else {
-          console.error("Error fetching places:", data.message);
+          // Handle the case where there are no rides
+          ridesContainer.innerHTML = "<p>No available rides found.</p>";
         }
-      } catch (error) {
-        console.error("Error fetching places:", error.message);
       }
-    }
 
-    // Function to handle form submission and fetch available rides
-    async function searchRides() {
-      try {
-        const pickupLocation = document.getElementById("pickup").value;
-        const dropoffLocation = document.getElementById("dropoff").value;
+      // Function to show ride details
+      function showRideDetails(ride) {
+        const driverDetailsContainer = document.getElementById("driverDetails");
+        const pickupDetailsSpan = document.getElementById("pickupDetails");
+        const dropoffDetailsSpan = document.getElementById("dropoffDetails");
+        const priceDetailsSpan = document.getElementById("priceDetails");
 
-        const response = await fetch(`http://localhost:8080/searchRides?source=${pickupLocation}&destination=${dropoffLocation}`);
-        const data = await response.json();
+        pickupDetailsSpan.textContent = ride.source;
+        dropoffDetailsSpan.textContent = ride.destination;
+        // Generating a random price for the ride (you can replace this logic)
+        const randomPrice = (Math.random() * (20 - 10) + 10).toFixed(2);
+        priceDetailsSpan.textContent = randomPrice;
 
-        if (response.ok) {
-          // Display rides
-          displayRides(data.rides);
-        } else {
-          // Handle the case where no rides data is available
-          console.error("No rides data available.");
+        driverDetailsContainer.style.display = "block";
+      }
+
+      // Function to book the selected ride
+      async function bookRide() {
+        if (!selectedRide) {
+          console.error("No ride selected for booking.");
+          return;
         }
-      } catch (error) {
-        console.error("Error searching rides:", error.message);
+
+        // Check if access token is available
+        const accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          console.error("Authorization error: No access token available.");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:8080/bookRide/${selectedRide._id}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Update the UI or perform any actions after successfully booking the ride
+            alert("Ride booked successfully!");
+          } else {
+            console.error("Error booking ride:", data.message);
+          }
+        } catch (error) {
+          console.error("Error booking ride:", error.message);
+        }
       }
-    }
 
-    // Function to display rides on the page
-    function displayRides(ridesData) {
-      const ridesContainer = document.getElementById("ridesContainer");
-
-      if (ridesData && ridesData.length > 0) {
-        // Display ride information
-        ridesData.forEach((ride, index) => {
-          const rideCard = document.createElement("div");
-          rideCard.className = "rideCard";
-
-          const rideDetailsButton = document.createElement("button");
-          rideDetailsButton.textContent = `Select ${ride.source} to ${ride.destination}`;
-          rideDetailsButton.onclick = function () {
-            showRideDetails(ride);
-          };
-
-          rideCard.appendChild(rideDetailsButton);
-          ridesContainer.appendChild(rideCard);
-        });
-      } else {
-        // Handle the case where there are no rides
-        ridesContainer.innerHTML = "<p>No available rides found.</p>";
-      }
-    }
-
-    // Function to show ride details
-    function showRideDetails(ride) {
-      // Implement this function if you need to show details of a selected ride
-      console.log(ride);
-    }
-
-    // Call the fetchPlaces function when the page loads
-    document.addEventListener("DOMContentLoaded", fetchPlaces);
-  </script>
-</body>
+      // Call the fetchPlaces function when the page loads
+      document.addEventListener("DOMContentLoaded", fetchPlaces);
+    </script>
+  </body>
 </html>
