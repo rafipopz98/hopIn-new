@@ -1,0 +1,138 @@
+<!-- listdriver.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>List of Drivers</title>
+    <link rel="stylesheet" href="listdriver.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>List of Drivers</h1>
+      <div id="driverList">
+        <!-- Driver list will be displayed here -->
+      </div>
+
+      <div id="driverDetails" style="display: none">
+        <h2>Driver Details</h2>
+        <p><strong>Pickup:</strong> <span id="pickupDetails"></span></p>
+        <p><strong>Dropoff:</strong> <span id="dropoffDetails"></span></p>
+        <p><strong>Price:</strong> $<span id="priceDetails"></span></p>
+        <button id="bookRideButton" onclick="bookRide()">Book Ride</button>
+      </div>
+    </div>
+
+    <script>
+      // Simulated ride data
+      const rides = [
+        {
+          _id: "659f131f2a2c0fca9adb863b",
+          source: "rajankunte",
+          destination: "Presidency university",
+          departureTime: "2024-01-15T08:00:10.000Z",
+          availableSeats: 1,
+          status: "available",
+          userId: "659f1034c0141981fef279c2",
+          __v: 0,
+        },
+        // Add more rides as needed
+      ];
+
+      // Display rides on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Retrieve the ride data from localStorage
+        const ridesData = rides; // Replace with the actual data from the backend
+
+        if (ridesData && ridesData.length > 0) {
+          // Display driver information
+          displayDriverList(ridesData);
+        } else {
+          // Handle the case where no rides data is available
+          console.error("No rides data available.");
+        }
+      });
+
+      function displayDriverList(driverData) {
+        const driverListContainer = document.getElementById("driverList");
+
+        if (driverData && driverData.length > 0) {
+          // Display driver information
+          driverData.forEach((ride, index) => {
+            const driverCard = document.createElement("div");
+            driverCard.className = "driverCard";
+
+            const driverDetailsButton = document.createElement("button");
+            driverDetailsButton.textContent = `Select ${ride.source} to ${ride.destination}`;
+            driverDetailsButton.onclick = function () {
+              showDriverDetails(ride);
+            };
+
+            driverCard.appendChild(driverDetailsButton);
+            driverListContainer.appendChild(driverCard);
+          });
+        } else {
+          // Handle the case where there are no rides
+          driverListContainer.innerHTML = "<p>No available rides found.</p>";
+        }
+      }
+
+      function showDriverDetails(ride) {
+        const driverDetailsContainer = document.getElementById("driverDetails");
+        const pickupDetailsSpan = document.getElementById("pickupDetails");
+        const dropoffDetailsSpan = document.getElementById("dropoffDetails");
+        const priceDetailsSpan = document.getElementById("priceDetails");
+
+        pickupDetailsSpan.textContent = ride.source;
+        dropoffDetailsSpan.textContent = ride.destination;
+        // Generating a random price for the ride (you can replace this logic)
+        const randomPrice = (Math.random() * (20 - 10) + 10).toFixed(2);
+        priceDetailsSpan.textContent = randomPrice;
+
+        // Store the selected ride data in localStorage
+        localStorage.setItem("selectedRide", JSON.stringify(ride));
+
+        driverDetailsContainer.style.display = "block";
+      }
+
+      async function bookRide() {
+        // Retrieve the selected ride data from localStorage
+        const selectedRide = JSON.parse(localStorage.getItem("selectedRide"));
+
+        // Check if access token is available
+        const accessToken = localStorage.getItem("accessToken");
+        console.log(accessToken);
+        if (!accessToken) {
+          console.error("Authorization error: No access token available.");
+
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:8080/bookRide/${selectedRide._id}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json", // Add this line if your backend expects JSON
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Add your logic after successfully booking the ride
+            alert("Ride booked successfully!");
+          } else {
+            console.error("Error booking ride:", data.message);
+          }
+        } catch (error) {
+          console.error("Error booking ride:", error.message);
+        }
+      }
+    </script>
+  </body>
+</html>

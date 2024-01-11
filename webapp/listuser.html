@@ -1,0 +1,102 @@
+<!-- listusers.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List of Users</title>
+  <link rel="stylesheet" href="listuser.css">
+</head>
+<body>
+  <div class="container">
+    <h1>List of Users</h1>
+    <div id="userList">
+      <!-- User list will be displayed here -->
+    </div>
+
+    <div id="userDetails" style="display: none;">
+      <h2>User Details</h2>
+      <p><strong>Pickup:</strong> <span id="pickupDetails"></span></p>
+      <p><strong>Dropoff:</strong> <span id="dropoffDetails"></span></p>
+      <button id="acceptRideButton" onclick="acceptRide()">Accept Ride</button>
+      <button id="rejectRideButton" onclick="rejectRide()">Reject Ride</button>
+    </div>
+
+    <!-- Modal for Ride Status -->
+    <div id="rideStatusModal" class="modal">
+      <div class="modal-content">
+        <h2 id="rideStatus">Ride Status</h2>
+        <button onclick="closeRideStatusModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulated user data
+    const users = [
+      { name: 'User 1', pickup: 'Central Park', dropoff: 'Presidency University' },
+      { name: 'User 2', pickup: 'Downtown Square', dropoff: 'Presidency University' },
+      { name: 'User 3', pickup: 'Riverside Park', dropoff: 'Presidency University' }
+    ];
+
+    // Display users on page load
+    document.addEventListener('DOMContentLoaded', function () {
+      displayUserList(users);
+    });
+
+    function displayUserList(userData) {
+      const userListContainer = document.getElementById('userList');
+
+      // Display user information
+      userData.forEach((user, index) => {
+        const userCard = document.createElement('div');
+        userCard.className = 'userCard';
+
+        const userDetailsButton = document.createElement('button');
+        userDetailsButton.textContent = `Select ${user.name}`;
+        userDetailsButton.onclick = function () {
+          showUserDetails(user);
+        };
+
+        userCard.appendChild(userDetailsButton);
+        userListContainer.appendChild(userCard);
+      });
+    }
+
+    function showUserDetails(user) {
+      const userDetailsContainer = document.getElementById('userDetails');
+      const pickupDetailsSpan = document.getElementById('pickupDetails');
+      const dropoffDetailsSpan = document.getElementById('dropoffDetails');
+
+      pickupDetailsSpan.textContent = user.pickup;
+      dropoffDetailsSpan.textContent = user.dropoff;
+
+      userDetailsContainer.style.display = 'block';
+    }
+
+    function acceptRide() {
+      // Add your logic for accepting the ride here
+      showRideStatusModal('Ride Accepted');
+    }
+
+    function rejectRide() {
+      // Add your logic for rejecting the ride here
+      showRideStatusModal('Ride Rejected');
+    }
+
+    function showRideStatusModal(status) {
+      const rideStatusModal = document.getElementById('rideStatusModal');
+      const rideStatus = document.getElementById('rideStatus');
+
+      rideStatus.textContent = status;
+      rideStatusModal.style.display = 'flex';
+    }
+
+    function closeRideStatusModal() {
+      const rideStatusModal = document.getElementById('rideStatusModal');
+      rideStatusModal.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
